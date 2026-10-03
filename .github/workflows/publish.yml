@@ -37,7 +37,9 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - name: Use supported pinned publishing CLI
-        run: npm install --global npm@12.2.0 --ignore-scripts --no-audit --fund=false
+        run: |
+          npm install --prefix "$RUNNER_TEMP/publishing-cli" npm@12.2.0 --ignore-scripts --no-audit --fund=false
+          echo "$RUNNER_TEMP/publishing-cli/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Test locked public source
         run: |
           npm ci --ignore-scripts --no-audit --fund=false
