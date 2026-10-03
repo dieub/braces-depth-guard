@@ -4,6 +4,7 @@ require('mocha');
 const assert = require('assert').strict;
 const expand = require('../lib/expand');
 const parse = require('../lib/parse');
+const vm = require('vm');
 const bashPath = require('bash-path');
 const cp = require('child_process');
 const braces = require('..');
@@ -28,6 +29,25 @@ describe('unit tests from brace-expand', () => {
       ast = { type: 'root', nodes: [ast] };
       assert.throws(() => expand(ast), /exceeds max depth/);
     });
+  });
+
+  it('rejects a self-referencing custom AST parent before the bounded VM deadline', () => {
+    const ast = { type: 'paren', nodes: [{ type: 'text', value: 'a' }] };
+    ast.parent = ast;
+    assert.throws(() => vm.runInNewContext('expand(ast)', { expand, ast }, { timeout: 250 }),
+      error => error instanceof RangeError && /parent chain contains a cycle/.test(error.message));
+  });
+
+  it('rejects a cycle across multiple custom AST parents', () => {
+    const parent = { type: 'paren' };
+    const ast = { type: 'paren', parent, nodes: [{ type: 'text', value: 'a' }] };
+    parent.parent = ast;
+    assert.throws(() => vm.runInNewContext('expand(ast)', { expand, ast }, { timeout: 250 }),
+      error => error instanceof RangeError && /parent chain contains a cycle/.test(error.message));
+  });
+
+  it('preserves ordinary parsed parentheses and their finite parent links', () => {
+    assert.deepEqual(expand(parse('foo/({a,b})')), ['foo/(a)', 'foo/(b)']);
   });
 
   describe('extglobs', () => {

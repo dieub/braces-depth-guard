@@ -25,6 +25,15 @@ describe('braces.parse()', () => {
     });
   });
 
+  it('enforces fractional depth limits before admitting the next nesting level', () => {
+    assert.doesNotThrow(() => parse('{a,b}', { maxDepth: 1.5 }));
+    assert.throws(() => parse('{{a,b},c}', { maxDepth: 1.5 }), /exceeds max depth/);
+    assert.doesNotThrow(() => parse('(a)', { maxDepth: 1.5 }));
+    assert.throws(() => parse('((a))', { maxDepth: 1.5 }), /exceeds max depth/);
+    assert.throws(() => parse('{a,b}', { maxDepth: 0.5 }), /exceeds max depth/);
+    assert.throws(() => parse('(a)', { maxDepth: 0.5 }), /exceeds max depth/);
+  });
+
   describe('valid', () => {
     it('should return an AST', () => {
       const ast = parse('a/{b,c}/d');
