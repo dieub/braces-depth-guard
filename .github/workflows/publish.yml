@@ -1,0 +1,47 @@
+name: Publish reviewed depth guard
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Exact independently reviewed source commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: braces-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'dieub/braces-depth-guard' && github.ref == 'refs/tags/3.0.3-pn.1' && vars.BRACES_PUBLISH_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: braces-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require exact reviewed revision and package
+        env:
+          EXPECTED_REVISION: ${{ inputs.revision }}
+        run: |
+          test "$EXPECTED_REVISION" = "$GITHUB_SHA"
+          node -e "const p=require('./package.json'); if(p.name!=='@dieub/braces-depth-guard'||p.version!=='3.0.3-pn.1')process.exit(1)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22.22.2'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Use supported pinned publishing CLI
+        run: npm install --global npm@12.2.0 --ignore-scripts --no-audit --fund=false
+      - name: Test locked public source
+        run: |
+          npm ci --ignore-scripts --no-audit --fund=false
+          npm test
+          npm audit --audit-level=low
+      - name: Publish exact package with OIDC provenance
+        run: npm publish --access public --tag guarded --provenance --ignore-scripts
