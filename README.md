@@ -4,8 +4,9 @@ A guard-only nesting-depth backport of MIT-licensed braces 3.0.3.
 
 Runtime code starts from the published upstream 3.0.3 release and applies only
 the depth guards from https://github.com/micromatch/braces/pull/72 at commit
-`d0d575e55e74a4e0218e5248fafb79efc3e54ebb`. Original stringify parent behavior
-is retained. Upstream authorship and the original MIT license are preserved.
+`d0d575e55e74a4e0218e5248fafb79efc3e54ebb`, plus the pn.2 fractional-limit and
+parent-cycle fixes and the pn.3 clamp of negative `maxDepth` values to 0 (both
+described below). Original stringify parent behavior is retained. Upstream authorship and the original MIT license are preserved.
 
 The change bounds nesting and recursive AST traversal to 100 levels. Inputs
 above that bound are rejected: string parsing throws SyntaxError, while
@@ -64,9 +65,15 @@ With a limit of 0, the root is walkable, plain text passes, and the first nested
 brace or paren is refused. Fractional limits are still compared without
 rounding. Non-finite values (`undefined`, `NaN`, `Infinity`, `-Infinity`) and
 non-numbers still fall back to the default of 100, and larger values are still
-capped at 100. Regression tests in `test/braces.max-depth.js` cover negative,
-zero, negative zero, fractional, non-finite and over-cap limits for all four
-entry points.
+capped at 100. Regression tests in `test/braces.max-depth.js` cover parse, compile, stringify,
+expand and the top-level `braces`, `braces.parse`, `braces.compile`,
+`braces.stringify` and `braces.expand` APIs. For each one they check that
+negative values, -0 and 0 act as depth 0, and that depth 101 is still refused with "exceeds max depth (100)" for
+`Infinity`, `NaN`, `-Infinity`, 1000, 1e9, the strings '1000', '1' and '-5',
+`null`, `true`, an object whose `valueOf` returns 1000, and a BigInt. Parse
+checks use 101 nested braces and 101 nested parens. Walker checks use a
+hand-built tree 102 levels deep. The AST walkers are also checked for unrounded
+fractional limits; parse's fractional limits are covered in `test/braces.parse.js`.
 
 The same limits apply as for pn.2. This change doesn't establish advisory
 clearance, independent acceptance or production readiness, and consumers need a
