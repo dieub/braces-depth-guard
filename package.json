@@ -1,7 +1,7 @@
 {
   "name": "@dieub/braces-depth-guard",
   "description": "Guard-only nesting-depth backport of braces 3.0.3",
-  "version": "3.0.3-pn.2",
+  "version": "3.0.3-pn.3",
   "homepage": "https://github.com/dieub/braces-depth-guard",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "contributors": [
