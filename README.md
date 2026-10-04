@@ -74,8 +74,19 @@ paths do not bypass the100-level cap, but this candidate does not promise one
 getter evaluation across an entire public wrapper call or universal validation
 of an unused option.
 
-Related-option inspection reproduced an existing input-length guard limitation:
-`maxLength: NaN`, or a getter yielding a number followed by NaN, can bypass
-the length comparison. This candidate does not change maxLength, rangeLimit,
-expansion cardinality, AST width or malformed-object handling. It is a depth-option
-correction, not a general resource-exhaustion or advisory-clearance claim.
+The same local candidate repairs the existing parsing-length option boundary.
+Parse reads `maxLength` once; NaN and negative numeric values (including
+negative infinity) throw `RangeError: maxLength must be a non-negative number`
+before processing. Zero accepts only an empty string; positive fractional values
+remain exact inclusive comparisons against integer string length. Positive
+infinity and numbers above10,000 retain the hard10,000-character cap. Omitted
+and nonnumeric values retain that default without coercion. Negative zero
+behaves as zero. This changes invalid numeric option diagnostics intentionally.
+
+Upstream3.0.3 and pn.2 accept a10,001-character string with `maxLength: NaN`
+or a numeric-to-NaN getter; this candidate rejects those bypasses. The change
+does not bound expansion cardinality, AST width or malformed-object handling.
+Direct caller-supplied ASTs have no parsing-length check. The existing create
+shortcut for strings shorter than3characters remains unchanged and can bypass
+a caller's stricter unused limit, although it cannot exceed the hard10,000cap.
+No universal resource-exhaustion or advisory-clearance claim is made.
