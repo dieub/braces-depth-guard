@@ -47,3 +47,30 @@ code; that inspection is not proof that every transitive path is unreachable.
 Neither this package name nor successful tests establish advisory clearance,
 independent acceptance, or production readiness. Consumers need fresh review
 of the exact published artifact and provenance before adoption.
+
+## Local candidate: explicit maxDepth option domain
+
+This unpublished source candidate validates the option consistently in parse,
+compile, expand and stringify. A finite numeric `maxDepth` must be non-negative;
+negative values throw `RangeError: maxDepth must be non-negative` before processing.
+Zero permits a root AST or plain text with no nested containers. Positive
+fractional limits remain inclusive bounds on integer nesting (1.5 permits depth1,
+rejects depth2). Values above100 are capped at100. Omitted, nonfinite and nonnumeric
+values retain the existing default100 without coercion, including numeric strings,
+booleans, null and boxed numbers. Negative zero behaves as zero.
+
+The option value is read once per processor so a stateful getter cannot replace
+a checked finite limit with NaN and disable depth comparisons. Arbitrary AST or
+options getters remain outside a comprehensive malformed-object guarantee.
+This candidate changes rejection diagnostics for negative values; it does not
+make negative nesting meaningful, clamp it to allow work, or clear any veto.
+It requires a separately reviewed new package version and fresh provenance before
+adoption. The existing package version field is retained only for local tests;
+these modified bytes must never be published as pn.2.
+
+Validation is per processor: public string wrappers may call parse and another
+processor, reading the option once in each. The create shortcut for very short
+strings remains unchanged and can return without invoking a processor. These
+paths do not bypass the100-level cap, but this candidate does not promise one
+getter evaluation across an entire public wrapper call or universal validation
+of an unused option.
